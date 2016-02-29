@@ -22,3 +22,15 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+.DS_Store
+
+# IntelliJ specific
+*.iml
+.idea/
+.metadata/
+
+# Eclipse specific
+.classpath
+.project
+.settings/
