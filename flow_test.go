@@ -9,7 +9,7 @@ import (
 
 //  Start => (A, B) => C => Done
 func TestFlowNet(t *testing.T) {
-	flow := NewFlowNet(1 * time.Millisecond)
+	flow := NewFlow(1 * time.Millisecond)
 	start := flow.InitStart("Start")
 	start.Tk = func() error {
 		start.To("A") <- 1

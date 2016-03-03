@@ -2,13 +2,20 @@ package flow
 
 import "fmt"
 
-const DONE string = "Done"
+const done string = "SUPER_SINK_NODE"
 
+// Each node can have multiple input and output ports.
+// They are connected via channels with interface{} type.
 type Ports struct {
 	In  map[string]<-chan interface{} // channel name -> read-only channel
 	Out map[string]chan<- interface{} // channel name -> write-only channel
 }
 
+// Each node in the flow must have an unique name. It is used
+// for labeled the connections / edges. The main task is defined
+// in Tk function, which take Ps ports as input and output.
+// In order to better control the task, user should pass in the
+// flow's background.
 type Node struct {
 	Name string       // node name, cannot be empty
 	Ps   *Ports       // node's interfaces
@@ -16,7 +23,14 @@ type Node struct {
 	Bg   *Background  // background, cannot be nil
 }
 
+// Return a new node with specified unique name, which should not be
+// nil or empty string. It will help user to initialize ports too.
+// Note that, 1) user should define its background and function task before
+// using it; 2) "SUPER_SINK_NODE" is a special reserved name.
 func NewNode(name string) *Node {
+	if len(name) == 0 || name == done {
+		panic(fmt.Sprintf("node error : invalid node name"))
+	}
 	return &Node{
 		Name: name,
 		Ps: &Ports{
@@ -26,6 +40,8 @@ func NewNode(name string) *Node {
 	}
 }
 
+// Run the task defined in Node.Tk function. Normally, it should be
+// called by flow.Run(), if this node is joined in the flow.
 func (n *Node) Run() {
 	done := make(chan bool)
 	defer close(done)
@@ -40,6 +56,8 @@ func (n *Node) Run() {
 	}
 }
 
+// A helper function to run the actual node's task.
+// Do not exposed to the caller.
 func (n *Node) runTask(done chan<- bool) {
 	defer func() /* deal with unexpected panic situation */ {
 		if r := recover(); r != nil {
@@ -56,6 +74,7 @@ func (n *Node) runTask(done chan<- bool) {
 	done <- true // tell node the task is completed
 }
 
+// Return the output channel by its receiver node's name
 func (n *Node) To(receiver string) chan<- interface{} {
 	cName := n.Name + "2" + receiver
 	if _, ok := n.Ps.Out[cName]; ok {
@@ -65,6 +84,7 @@ func (n *Node) To(receiver string) chan<- interface{} {
 	}
 }
 
+// Return the input channel by its sender node's name
 func (n *Node) From(sender string) <-chan interface{} {
 	cName := sender + "2" + n.Name
 	if _, ok := n.Ps.In[cName]; ok {
@@ -74,9 +94,10 @@ func (n *Node) From(sender string) <-chan interface{} {
 	}
 }
 
+// Return a channel for super sink node
 func (n *Node) ToSink() chan<- interface{} {
-	if _, ok := n.Ps.Out[DONE]; ok {
-		return n.Ps.Out[DONE]
+	if _, ok := n.Ps.Out[done]; ok {
+		return n.Ps.Out[done]
 	} else {
 		panic(fmt.Sprintf("flow error : %s is not a sink node", n.Name))
 	}
