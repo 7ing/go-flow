@@ -1,10 +1,9 @@
 package flow
 
 import (
+	"context"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // Flow's background, which defines its timed context
@@ -112,7 +111,7 @@ func (fn *Flow) Run() error {
 	}
 }
 
-// Cleanup all opened channel to save resources. 
+// Cleanup all opened channel to save resources.
 func (fn *Flow) Cleanup() {
 	defer func() {
 		recover() // resume from a panic in case closing a closed channel
